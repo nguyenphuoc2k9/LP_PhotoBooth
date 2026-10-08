@@ -30,7 +30,9 @@ test('real local AR model tracks faces, previews all accessories and captures th
   expect(createHash('sha256').update(png).digest('hex')).toBe(withPixels);
   await page.locator('.print-composition').screenshot({path:'screenshots/ar-result.png'});
   await page.getByRole('button',{name:'Chụp bộ ảnh mới',exact:true}).click();
+  await page.getByRole('button',{name:'AR',exact:true}).click();
   await page.getByLabel('Bật phụ kiện AR',{exact:true}).uncheck();
+  await page.getByRole('button',{name:'Đóng AR',exact:true}).click();
   await page.getByRole('button',{name:'Chụp từng ảnh',exact:true}).click();
   await expect(page.locator('.finished-print')).toBeVisible();
   expect(await page.locator('.finished-print').getAttribute('src')).not.toBe(withAR);

@@ -73,7 +73,11 @@ test('beauty is reversible; all 100 stickers load; drag, transforms, delete and 
   await page.screenshot({path:'screenshots/beauty-stickers-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  for (const selector of ['.print-composition','.print-editor','.sticker-grid']) { const bounds=(await page.locator(selector).boundingBox())!; expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x+bounds.width).toBeLessThanOrEqual(390); }
+  for (const selector of ['.print-composition','.print-editor']) { const bounds=(await page.locator(selector).boundingBox())!; expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x+bounds.width).toBeLessThanOrEqual(390); }
+  await page.getByRole('button',{name:'Sticker',exact:true}).click();
+  await page.locator('.sticker-panel summary').click();
+  const grid=(await page.locator('.sticker-grid').boundingBox())!;expect(grid.x).toBeGreaterThanOrEqual(0);expect(grid.x+grid.width).toBeLessThanOrEqual(390);
+  await page.getByRole('button',{name:'Đóng Sticker',exact:true}).click();
   await sticker.scrollIntoViewIfNeeded();
   const touch=await page.context().newCDPSession(page);
   await touch.send('Emulation.setTouchEmulationEnabled',{enabled:true});

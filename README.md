@@ -33,6 +33,8 @@ Mở http://127.0.0.1:3000. Nhấn **Bật camera** để cấp quyền, hoặc 
 
 ## Tối ưu UI/UX
 
+Trên điện thoại dưới 768 px (và màn hình ngang thấp), camera và nút chụp đứng trước dải ảnh. Thanh **Khung · Bộ lọc · AR · Làm đẹp · Hiệu ứng** mở từng bảng từ dưới màn hình; đóng bảng giữ lựa chọn và trả tiêu điểm về nút mở. Trang thành phẩm gom công cụ thành nhóm, ưu tiên ảnh xem trước và nút tải PNG. Vùng chạm sticker lớn hơn chỉ áp dụng ở booth, không thay đổi trang admin. Kiểm thử `tests/mobile-tools.spec.ts` bao gồm các kích thước 320–430 px, ngang 844 px, bảng công cụ, vòng đời camera/AR, thao tác cảm ứng mô phỏng và tải ảnh. Safari và bàn phím trên điện thoại thật cần kiểm tra trên thiết bị.
+
 Mở trực tiếp vào booth. Không tải phần trang giới thiệu, GSAP, marquee, hiệu ứng ghim hoặc hiệu ứng cuộn vào trang hiện hành. Chỉ giữ đếm ngược và phản hồi chụp ngắn. Preview dùng hai canvas tái sử dụng ở khoảng 12 fps; ảnh mẫu chỉ được vẽ lại khi thay đổi bộ lọc hoặc bố cục, trừ khi bật AR. Tạm ngưng preview khi tab bị ẩn. Bộ lọc preview và xuất ảnh dùng cùng phép biến đổi pixel, kể cả trên trình duyệt không hỗ trợ canvas.filter.
 
 ## Kiến trúc

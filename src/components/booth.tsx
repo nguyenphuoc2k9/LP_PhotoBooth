@@ -7,6 +7,7 @@ import { applyFilter, captureFrame, composePhoto, downloadPhoto, generatePhotoSt
 
 import { COLLECTED_FRAMES, loadCollectedFrame, frameLayout, isFrameLayout } from '@/lib/collected-frames';
 import { ARPicker } from './ar-picker';
+import { MobileTool } from './mobile-tool';
 import { useAR } from '@/hooks/use-ar';
 import { paintAR,type ARAccessory } from '@/lib/ar';
 import { BeautyPicker } from './beauty-picker';
@@ -278,7 +279,6 @@ export function Booth() {
           <label>Bố cục ảnh<select disabled={!!options.customFrame} value={options.layout} onChange={e => update('layout', e.target.value as LayoutId)}>{options.customFrame ? <option value={options.layout}>{layout.shots} ảnh · Khung admin</option> : LAYOUTS.filter(l => frameLayout(options.theme) ? l.id === frameLayout(options.theme) : !isFrameLayout(l.id)).map(l => <option value={l.id} key={l.id}>{l.name}</option>)}</select></label>
           <label>Đếm ngược<select value={delay} onChange={e => setDelay(Number(e.target.value))}>{[1, 3, 5, 10].map(n => <option key={n} value={n}>{n} giây</option>)}</select></label>
           <button className="frame-button" onClick={() => gallery.current?.showModal()}><Frame size={17} />Chọn khung<span>{THEMES.length + sharedFrames.length}</span></button>
-          <button className="sample-button" aria-pressed={demo} disabled={!sample} onClick={() => { camera.stop(); setDemo(!demo); }}>Ảnh mẫu{demo && <Check size={14} />}</button>
         </fieldset>
         <div className="viewfinder" style={{ '--ratio': layout.ratio } as CSSProperties}>
           <canvas ref={canvasRef} className={!demo && facing === 'user' ? 'mirrored' : ''} aria-label="Xem trước camera" role="img" />
@@ -299,12 +299,18 @@ export function Booth() {
           <button className="capture-action" disabled={busy || !photos.some(Boolean)} onClick={reset}><span><RotateCcw size={23} /></span>Chụp lại</button>
         </div>
         <div className="secondary-controls">
+          {phase !== 'countdown' && <button className="sample-button" aria-pressed={demo} disabled={!sample || busy} onClick={() => { camera.stop(); setDemo(!demo); }}>Ảnh mẫu{demo && <Check size={14} />}</button>}
           {phase === 'countdown' ? <button className="button secondary" onClick={cancel}><X size={15} />Dừng chụp</button> : <><button className="button upload-button" disabled={uploading} onClick={() => uploadAt(null)}><ImagePlus size={16} />{uploading ? 'Đang đọc ảnh…' : 'Tải ảnh lên'}</button>{!demo && camera.status === 'ready' && <button className="quiet-button" onClick={() => { const next = facing === 'user' ? 'environment' : 'user'; setFacing(next); void camera.start(next); }}><SwitchCamera size={16} />Đổi camera</button>}</>}
         </div>
-        <fieldset className="filters-panel" disabled={busy}><legend>Bộ lọc màu <span>12 sắc thái cho khoảnh khắc của bạn</span></legend><div className="filter-list">{FILTERS.map((f, i) => <button key={f.id} className={'filter-option ' + (options.filter === f.id ? 'selected' : '')} aria-pressed={options.filter === f.id} onClick={() => update('filter', f.id)}>{filterThumbs[i] && <img src={filterThumbs[i]} alt="" />}<span>{f.name}</span></button>)}</div></fieldset>
+        <div className="capture-toolset">
+        <button className="mobile-tool-trigger mobile-frame-trigger" disabled={busy} onClick={() => gallery.current?.showModal()}>Khung</button>
+        <MobileTool title="Bộ lọc" disabled={busy}><fieldset className="filters-panel" disabled={busy}><legend>Bộ lọc màu <span>12 sắc thái cho khoảnh khắc của bạn</span></legend><div className="filter-list">{FILTERS.map((f, i) => <button key={f.id} className={'filter-option ' + (options.filter === f.id ? 'selected' : '')} aria-pressed={options.filter === f.id} onClick={() => update('filter', f.id)}>{filterThumbs[i] && <img src={filterThumbs[i]} alt="" />}<span>{f.name}</span></button>)}</div></fieldset></MobileTool>
+        <MobileTool title="AR" disabled={busy}>
         <ARPicker enabled={arEnabled} onEnabled={setArEnabled} items={arItems} onItems={setArItems} size={arSize} onSize={setArSize} status={ar.status} faces={ar.faceCount} active={ready} disabled={busy} onRetry={ar.retry}/>
-        <EffectPicker value={options.effects} onChange={v => update('effects', v)} disabled={busy} />
-        <BeautyPicker value={options.beauty} onChange={v => update('beauty', v)} disabled={busy} />
+        </MobileTool>
+        <MobileTool title="Làm đẹp" disabled={busy}><BeautyPicker value={options.beauty} onChange={v => update('beauty', v)} disabled={busy} /></MobileTool>
+        <MobileTool title="Hiệu ứng" disabled={busy}><EffectPicker value={options.effects} onChange={v => update('effects', v)} disabled={busy} /></MobileTool>
+        </div>
         <p className="privacy-line"><ShieldCheck size={14} />Ảnh được xử lý trên thiết bị, không gửi lên máy chủ.</p>
       </section>
 
@@ -325,16 +331,28 @@ export function Booth() {
       <div className="result-title"><span>Ảnh của bạn đã sẵn sàng</span><h1 tabIndex={-1} ref={resultHeading}>Giữ lại khoảnh khắc này.</h1><p>Thêm một lời nhắn, chọn khung yêu thích rồi tải về.</p></div>
       <div className="result-grid"><div className="result-stage">{preview ? <div className="print-composition" style={{ width: !options.customFrame && options.layout === 'strip' ? 205 : Math.min(500, 640 * (printRef.current ? printRef.current.width / printRef.current.height : 1)) }}><img className={'finished-print ' + options.layout} src={preview} alt={'Ảnh hoàn chỉnh: ' + options.caption} /><StickerLayer items={stickers} selected={selectedSticker} onSelect={setSelectedSticker} onChange={setStickers} /></div> : <LoaderCircle className="spin" />}<span className="print-size">{size} · PNG{rendering ? ' · Đang cập nhật…' : ''}</span></div>
       <div className="print-editor"><h2>Một chút của riêng bạn</h2>
-        <button className="current-frame" onClick={() => gallery.current?.showModal()}><span style={{ background: theme.color }} />{theme.name}<Frame size={17} /></button>
+        <MobileTool title="Khung, lời nhắn và màu ảnh">
+        <button className="current-frame" onClick={e => {
+          const sheet=e.currentTarget.closest('dialog');
+          const returnTo=sheet?.previousElementSibling;
+          sheet?.close();
+          if(returnTo instanceof HTMLButtonElement)gallery.current?.addEventListener('close',()=>returnTo.focus(),{once:true});
+          gallery.current?.showModal();
+        }}><span style={{ background: theme.color }} />{theme.name}<Frame size={17} /></button>
         <label>Lời nhắn<input value={options.caption} maxLength={60} onChange={e => update('caption', e.target.value)} placeholder="Viết một điều dễ thương…" /></label>
         <label>Bộ lọc màu<select aria-label="Bộ lọc màu" value={options.filter} onChange={e => update('filter', e.target.value as PrintOptions['filter'])}>{FILTERS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
         <label>Bố cục ảnh<select disabled={!!options.customFrame} aria-label="Bố cục ảnh" value={options.layout} onChange={e => update('layout', e.target.value as LayoutId)}>{options.customFrame ? <option value={options.layout}>{layout.shots} ảnh · Khung admin</option> : LAYOUTS.filter(l => (frameLayout(options.theme) ? l.id === frameLayout(options.theme) : !isFrameLayout(l.id)) && photos.slice(0, l.shots).every(Boolean)).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-        <EffectPicker value={options.effects} onChange={v => update('effects', v)} />
-        <BeautyPicker value={options.beauty} onChange={v => update('beauty', v)} />
+        </MobileTool>
+        <MobileTool title="Hiệu ứng"><EffectPicker value={options.effects} onChange={v => update('effects', v)} /></MobileTool>
+        <MobileTool title="Làm đẹp"><BeautyPicker value={options.beauty} onChange={v => update('beauty', v)} /></MobileTool>
+        <MobileTool title="Sticker">
         <StickerPicker items={stickers} selected={selectedSticker} onSelect={setSelectedSticker} onChange={setStickers} />
+        </MobileTool>
+        <MobileTool title="Màu khung và trang trí">
         {!options.customFrame && !COLLECTED_FRAMES[options.theme] && <div className="color-row"><label>Màu nền<input type="color" value={options.background} onChange={e => update('background', e.target.value)} /></label><label>Màu viền<input type="color" value={options.border} onChange={e => update('border', e.target.value)} /></label></div>}
         <div className="date-row"><label><input type="checkbox" checked={options.showDate} onChange={e => update('showDate', e.target.checked)} />In ngày chụp</label><input type="date" aria-label="Ngày chụp" disabled={!options.showDate} value={options.date} onChange={e => update('date', e.target.value)} /></div>
         <fieldset className="decorations"><legend>Trang trí nhỏ</legend>{(['none', 'heart', 'star', 'sparkle'] as const).map((kind, i) => { const Icon = [X, Heart, Star, Sparkles][i]; return <button key={kind} aria-label={['Không trang trí', 'Trái tim', 'Ngôi sao', 'Lấp lánh'][i]} aria-pressed={options.decoration === kind} className={options.decoration === kind ? 'selected' : ''} onClick={() => update('decoration', kind)}><Icon size={18} /></button>; })}</fieldset>
+        </MobileTool>
         <button className="button primary download-button" disabled={!preview || rendering || saving} onClick={() => void save()}><Download size={18} />{saving ? 'Đang tải ảnh…' : 'Tải ảnh PNG'}</button>
         <button className="button secondary" onClick={reset}><RotateCcw size={16} />Chụp bộ ảnh mới</button>
         <p className="editor-note">Camera đã tắt. Ảnh vẫn chỉ ở trên thiết bị của bạn.</p>
