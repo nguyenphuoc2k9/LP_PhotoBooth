@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.sites-runtime/
+test-results/
+playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+*.zip
+
+.data/
+.data-test*/
+.env*
+!.env.example
+test-results-admin/
